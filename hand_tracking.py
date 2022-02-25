@@ -1,13 +1,16 @@
 import cv2
 import mediapipe as mp
 
-class CameraControl:
+class HandTracking:
 
     def __init__(self):
         self.capture = True
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_drawing_styles = mp.solutions.drawing_styles
         self.mp_hands = mp.solutions.hands
+
+        self.x = 0
+        self.y = 0
 
     # Método de teste para abrir a câmera já com o reconhecimento de mãos
     def openCamera(self):
@@ -36,9 +39,15 @@ class CameraControl:
                         self.mp_drawing.draw_landmarks(
                             frame,
                             hand_landmarks,
-                            self.mp_hands.HAND_CONNECTIONS,
-                            self.mp_drawing_styles.get_default_hand_landmarks_style(),
-                            self.mp_drawing_styles.get_default_hand_connections_style())
+                            self.mp_hands.HAND_CONNECTIONS)
+                        for id, lm in enumerate(hand_landmarks.landmark):
+                            h, w, c = frame.shape
+                            cx, cy = int(lm.x * w), int(lm.y * h)
+                            
+                            if cx != self.x or cy != self.y:
+                                self.x = cx
+                                self.y = cy
+                                print(cx, cy)
 
                 # Flip the image horizontally for a selfie-view display.
                 cv2.imshow('MediaPipe Hands', cv2.flip(frame, 1))

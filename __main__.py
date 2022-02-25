@@ -1,6 +1,5 @@
-from SignalRecognizing.camera_control import CameraControl
-
-CameraControl = CameraControl()
+from hand_tracking import HandTracking
+HandTracking = HandTracking()
 
 if __name__ == '__main__':
-    CameraControl.openCamera()
+    HandTracking.openCamera()
