@@ -5,49 +5,48 @@ class HandTracking:
 
     def __init__(self):
         self.capture = True
+        self.noiseRange = 5
+
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_drawing_styles = mp.solutions.drawing_styles
         self.mp_hands = mp.solutions.hands
 
-        self.x = 0
-        self.y = 0
+        self.hands = self.mp_hands.Hands(model_complexity=0, min_detection_confidence=0.5, min_tracking_confidence=0.5)
 
-    # Método de teste para abrir a câmera já com o reconhecimento de mãos
-    def openCamera(self):
+        self.x, self.y = 0, 0
+        self.position = [self.x, self.y]
 
-        # Instancia a classe de reconhecimento de mãos
-        with self.mp_hands.Hands(model_complexity=0, min_detection_confidence=0.5, min_tracking_confidence=0.5) as hands:
+        self.trajectory = [[0,0]]
 
-            # Inicia a captura da camera
-            camera = cv2.VideoCapture(0)
-            
-            while self.capture:
-                status, frame = camera.read()
+    def getHands(self, frame):
 
-                if not status or cv2.waitKey(1) & 0xff == ord('q'):
-                    self.capture = False
+        # conversão de cores do padrão BGR do opencv para RGB do mediapipe
+        frame.flags.writeable = False
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-                frame.flags.writeable = False
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                results = hands.process(frame)
+        # Resultado do reconhecimento de mãos
+        results = self.hands.process(frame)
 
-                # Draw the hand annotations on the image.
-                frame.flags.writeable = True
-                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-                if results.multi_hand_landmarks:
-                    for hand_landmarks in results.multi_hand_landmarks:
-                        self.mp_drawing.draw_landmarks(
-                            frame,
-                            hand_landmarks,
-                            self.mp_hands.HAND_CONNECTIONS)
-                        for id, lm in enumerate(hand_landmarks.landmark):
-                            h, w, c = frame.shape
-                            cx, cy = int(lm.x * w), int(lm.y * h)
-                            
-                            if cx != self.x or cy != self.y:
-                                self.x = cx
-                                self.y = cy
-                                print(cx, cy)
+        return results
+    
+    def getFingerPosition(self, frame, results):
 
-                # Flip the image horizontally for a selfie-view display.
-                cv2.imshow('MediaPipe Hands', cv2.flip(frame, 1))
+        if results.multi_hand_landmarks:
+            for hand_landmarks in results.multi_hand_landmarks:
+
+                self.mp_drawing.draw_landmarks(
+                    frame,
+                    hand_landmarks,
+                    self.mp_hands.HAND_CONNECTIONS)
+
+                for id, lm in enumerate(hand_landmarks.landmark):
+
+                    if id == 8:
+                        h, w, c = frame.shape
+                        cx, cy = int(lm.x * w), int(lm.y * h)
+
+                        if cx != self.x or cy != self.y:
+                            self.x, self.y = cx, cy
+
+
+
